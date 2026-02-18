@@ -1,4 +1,6 @@
 (async () => {
-  const script = chrome.runtime.getURL("content.js");
+  const runtime =
+    typeof browser !== "undefined" ? browser.runtime : chrome.runtime;
+  const script = runtime.getURL("content.js");
   await import(script);
 })();

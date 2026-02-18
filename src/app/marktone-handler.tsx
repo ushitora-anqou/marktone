@@ -66,11 +66,9 @@ class MarktoneHandler {
   }
 
   private async renderMarktone(originalForm: HTMLFormElement): Promise<void> {
-    const originalTextbox = originalForm.querySelector<HTMLDivElement>(
-      ".ocean-ui-editor-field",
-    ) as HTMLDivElement;
+    const editorFieldElement = await this.getEditorFieldElement(originalForm);
 
-    const replyMentions = await this.extractReplyMentions(originalTextbox);
+    const replyMentions = await this.extractReplyMentions(editorFieldElement);
     const marktoneContainer = this.findOrCreateMarktoneContainer(originalForm);
 
     const root = createRoot(marktoneContainer);
@@ -126,6 +124,66 @@ class MarktoneHandler {
     originalForm.prepend(createdContainer);
 
     return createdContainer;
+  }
+
+  private async getEditorFieldElement(
+    originalForm: HTMLFormElement,
+  ): Promise<HTMLElement> {
+    const iframe = originalForm.querySelector<HTMLIFrameElement>(
+      "iframe.ocean-ui-editor-field",
+    );
+
+    if (iframe) {
+      // Wait for iframe to load if not already loaded
+      if (!iframe.contentDocument?.body) {
+        await new Promise<void>((resolve) => {
+          const handleLoad = (): void => {
+            iframe.removeEventListener("load", handleLoad);
+            resolve();
+          };
+          iframe.addEventListener("load", handleLoad);
+        });
+      }
+
+      // Wait for iframe content to be populated with mention elements
+      const body = iframe.contentDocument?.body;
+      if (body) {
+        await this.waitForIframeContent(iframe);
+      }
+
+      return iframe.contentDocument?.body ?? iframe;
+    }
+
+    const divEditor = originalForm.querySelector<HTMLDivElement>(
+      'div.ocean-ui-editor-field[role="textbox"]',
+    );
+    return divEditor ?? originalForm;
+  }
+
+  private waitForIframeContent(iframe: HTMLIFrameElement): Promise<void> {
+    return new Promise((resolve) => {
+      // If content already exists, resolve immediately
+      if (iframe.contentDocument?.body.innerHTML.trim() !== "") {
+        resolve();
+        return;
+      }
+
+      // Use polling to wait for content (more reliable across browsers)
+      const pollInterval = 10; // ms
+      const maxWaitTime = 1000; // ms
+      let elapsedTime = 0;
+
+      const checkContent = (): void => {
+        if (iframe.contentDocument?.body.innerHTML.trim() !== "" || elapsedTime >= maxWaitTime) {
+          resolve();
+          return;
+        }
+        elapsedTime += pollInterval;
+        setTimeout(checkContent, pollInterval);
+      };
+
+      setTimeout(checkContent, pollInterval);
+    });
   }
 }
 

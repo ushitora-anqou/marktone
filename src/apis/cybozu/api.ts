@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill";
 import {
   CybozuDataInitializationTimeoutError,
   UninitializedCybozuDataError,
@@ -39,7 +40,7 @@ export async function initializeCybozuData(): Promise<CybozuData> {
     });
 
     const scriptEl = document.createElement("script");
-    scriptEl.src = chrome.runtime.getURL("js/passCybozuData.js");
+    scriptEl.src = browser.runtime.getURL("js/passCybozuData.js");
     document.body.appendChild(scriptEl);
   });
 }

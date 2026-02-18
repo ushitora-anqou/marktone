@@ -114,9 +114,34 @@ const Marktone: React.FC<MarktoneProps> = ({
   const [renderedHTML, setRenderedHTML] = useState("");
 
   // The original editor field HTML element of kintone
-  const originalEditorFieldEl = originalFormEl.querySelector<HTMLElement>(
-    'div.ocean-ui-editor-field[role="textbox"]',
-  );
+  const [originalEditorFieldEl, setOriginalEditorFieldEl] =
+    useState<HTMLElement | null>(null);
+
+  // Initialize editor field element (handles both iframe and div-based editors)
+  useEffect(() => {
+    const iframe = originalFormEl.querySelector<HTMLIFrameElement>(
+      "iframe.ocean-ui-editor-field",
+    );
+
+    if (iframe) {
+      const handleLoad = (): void => {
+        setOriginalEditorFieldEl(iframe.contentDocument?.body ?? null);
+      };
+
+      if (iframe.contentDocument?.body) {
+        handleLoad();
+      }
+
+      iframe.addEventListener("load", handleLoad);
+      return () => iframe.removeEventListener("load", handleLoad);
+    }
+
+    setOriginalEditorFieldEl(
+      originalFormEl.querySelector<HTMLElement>(
+        'div.ocean-ui-editor-field[role="textbox"]',
+      ),
+    );
+  }, [originalFormEl]);
 
   // Get Marktone enabled status.
   const isMarktoneEnabled = (): boolean => {
@@ -131,6 +156,14 @@ const Marktone: React.FC<MarktoneProps> = ({
   useEffect(() => {
     if (isMarktoneEnabled() && originalEditorFieldEl) {
       originalEditorFieldEl.innerHTML = renderedHTML;
+
+      // Dispatch input event to notify kintone of the change
+      // This is necessary for Firefox where innerHTML changes are not detected automatically
+      const inputEvent = new InputEvent("input", {
+        bubbles: true,
+        cancelable: true,
+      });
+      originalEditorFieldEl.dispatchEvent(inputEvent);
     }
   }, [renderedHTML, originalEditorFieldEl]);
 

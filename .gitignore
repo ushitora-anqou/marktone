@@ -3,6 +3,7 @@ node_modules
 
 # Webpack
 dist/
+dist-firefox/
 
 # Package
 *.zip

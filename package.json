@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "vite build --watch",
-    "clean": "tsx scripts/rm.ts dist/ *.zip",
+    "clean": "tsx scripts/rm.ts dist/ dist-firefox/ *.zip",
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "run-p --print-label 'lint:*'",
@@ -16,6 +16,8 @@
     "fix:biome": "biome check --write",
     "fix:prettier": "prettier --write .",
     "package": "run-s --print-label clean build && tsx scripts/zip.ts marktone.zip dist",
+    "package:firefox": "run-s --print-label clean build && tsx scripts/prepare-firefox.ts && tsx scripts/zip.ts marktone-firefox.zip dist-firefox",
+    "package:all": "run-s --print-label clean build && tsx scripts/zip.ts marktone.zip dist && tsx scripts/prepare-firefox.ts && tsx scripts/zip.ts marktone-firefox.zip dist-firefox",
     "test": "vitest",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
@@ -30,6 +32,7 @@
     "marked": "16.4.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "webextension-polyfill": "0.12.0",
     "zod": "4.3.6"
   },
   "devDependencies": {
@@ -49,6 +52,7 @@
     "@types/chrome": "0.1.36",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
+    "@types/webextension-polyfill": "0.12.4",
     "@types/webscopeio__react-textarea-autocomplete": "4.7.5",
     "@vanilla-extract/vite-plugin": "5.1.4",
     "@vitejs/plugin-react-swc": "4.2.3",

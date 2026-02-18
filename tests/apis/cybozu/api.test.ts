@@ -1,4 +1,5 @@
-import { beforeEach, describe } from "vitest";
+import { beforeEach, describe, vi } from "vitest";
+import browser from "webextension-polyfill";
 import {
   clearCybozuData,
   getDisplayLocale,
@@ -13,14 +14,10 @@ import {
 } from "@/apis/cybozu/errors.ts";
 
 describe(initializeCybozuData, () => {
-  const getURLMock = vi.fn();
+  const getURLMock = vi.mocked(browser.runtime.getURL);
 
   beforeEach(() => {
-    // Assign the mock to the global object
-    Object.assign(globalThis, {
-      chrome: { runtime: { getURL: getURLMock } },
-    });
-
+    getURLMock.mockReset();
     clearCybozuData();
   });
 
@@ -37,7 +34,7 @@ describe(initializeCybozuData, () => {
 
     getURLMock.mockImplementation(() => {
       document.dispatchEvent(event);
-      return "chrome://test_url";
+      return "moz-extension://test_url";
     });
     const appendChildSpy = vi.spyOn(document.body, "appendChild");
 
@@ -50,7 +47,9 @@ describe(initializeCybozuData, () => {
     expect(appendChildSpy).toHaveBeenCalled();
     const scriptEl = appendChildSpy.mock.calls[0][0];
     expect(scriptEl).toBeInstanceOf(HTMLScriptElement);
-    expect((scriptEl as HTMLScriptElement).src).toBe("chrome://test_url");
+    expect((scriptEl as HTMLScriptElement).src).toBe(
+      "moz-extension://test_url",
+    );
   });
 
   it("should reject if data reception timeout", async () => {
